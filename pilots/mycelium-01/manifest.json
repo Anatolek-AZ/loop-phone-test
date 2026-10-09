@@ -1,0 +1,81 @@
+{
+ "session_id": "mycelium-01",
+ "title": "Nocturne Hyphae",
+ "note": "throwaway phone test media",
+ "files": {
+  "poster.jpg": {
+   "size_bytes": 211416,
+   "sha256": "ccb9dafef15a98ee0f292649615be47a3fa0cc7a5fe3523c71caba3e2d87161e"
+  },
+  "video_720.mp4": {
+   "size_bytes": 29281841,
+   "sha256": "147410309ca6bb98e5a8b4376fc1957865ef05f954cc2ee3876f302d16c8e6c0",
+   "duration_s": 240.0
+  },
+  "audio_allnight_60m.m4a": {
+   "size_bytes": 58499406,
+   "sha256": "838bf5b0e1ac2027ce0686981e1ff72f375dde919be6c96559015cad6129a6b1",
+   "duration_s": 3600.0
+  },
+  "audio_timer_15m.m4a": {
+   "size_bytes": 14340866,
+   "sha256": "ebe856f6dcf7dda941590039f03adfd28f12c82b46a37b968d2c11fa1d80ce99",
+   "duration_s": 900.011
+  },
+  "audio_timer_30m.m4a": {
+   "size_bytes": 28801370,
+   "sha256": "5bf2ea3cf47e4244b5dee0c70bd7edc48fad16cd51b3aafbfa2bd47429917e07",
+   "duration_s": 1800.0
+  },
+  "audio_loop_4m.m4a": {
+   "role": "audio_loop",
+   "sample_rate": 48000,
+   "loop_start_s": 0.5,
+   "loop_len_s": 240.0,
+   "margin_s": 0.5,
+   "crossfade_s": 2.0,
+   "source": "first 240 s of audio_allnight_60m.m4a (edit list honoured)",
+   "size_bytes": 3921980
+  }
+ },
+ "edit_lists": {
+  "audio_allnight_60m": {
+   "movie_timescale": 1000,
+   "media_time_before": 1024,
+   "media_time_after": 5120,
+   "segment_duration": 3600000
+  },
+  "audio_timer_15m": {
+   "movie_timescale": 1000,
+   "media_time_before": 1024,
+   "media_time_after": 5120,
+   "segment_duration": 900000
+  },
+  "audio_timer_30m": {
+   "movie_timescale": 1000,
+   "media_time_before": 1024,
+   "media_time_after": 5120,
+   "segment_duration": 1800000
+  }
+ },
+ "release_assets": {
+  "video_1080.mp4": {
+   "size_bytes": 65672692,
+   "sha256": "a6705134542cecaec7c4980a3b068137e955477cb8a3ae614136f284774d0047",
+   "url": "https://github.com/Anatolek-AZ/loop-phone-test/releases/download/media-v1/mycelium-01__video_1080.mp4",
+   "note": "release asset (cross-origin, not used by the page)"
+  },
+  "audio_timer_60m.m4a": {
+   "size_bytes": 57859481,
+   "sha256": "1dde89809cfe6cd696b9883e5ceb407bc7f9d64bcfb0524655bf5c334de852b6",
+   "url": "https://github.com/Anatolek-AZ/loop-phone-test/releases/download/media-v1/mycelium-01__audio_timer_60m.m4a",
+   "note": "release asset (cross-origin, not used by the page)"
+  },
+  "audio_timer_90m.m4a": {
+   "size_bytes": 87037366,
+   "sha256": "50ec6f13f642e757b3ece0c151f322a2a9afead63281ffd213b5b4714e75cf06",
+   "url": "https://github.com/Anatolek-AZ/loop-phone-test/releases/download/media-v1/mycelium-01__audio_timer_90m.m4a",
+   "note": "release asset (cross-origin, not used by the page)"
+  }
+ }
+}

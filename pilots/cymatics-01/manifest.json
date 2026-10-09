@@ -1,0 +1,81 @@
+{
+ "session_id": "cymatics-01",
+ "title": "Graphite & Sage",
+ "note": "throwaway phone test media",
+ "files": {
+  "poster.jpg": {
+   "size_bytes": 138307,
+   "sha256": "8514fa3202c1e03047ef9439148d3f740e13d6a5308fc0bcc84193f79d8c76a9"
+  },
+  "video_720.mp4": {
+   "size_bytes": 26020424,
+   "sha256": "aae06ce66a9b9535d2883891d6779730664eca269a466eb15c89098082242b39",
+   "duration_s": 240.0
+  },
+  "audio_allnight_60m.m4a": {
+   "size_bytes": 58467074,
+   "sha256": "75e7a765c4673c08a44538d78792bc51dbee2b1371d741877f5d0a78a720ee00",
+   "duration_s": 3600.0
+  },
+  "audio_timer_15m.m4a": {
+   "size_bytes": 14348043,
+   "sha256": "f0a73122437ef83334a7b90186d608312df8246f377c2ddb96652e3cef9c2852",
+   "duration_s": 900.011
+  },
+  "audio_timer_30m.m4a": {
+   "size_bytes": 28833789,
+   "sha256": "856913b602480fbac00303ea147ec240fa361801a0fcd809b1fb27b09216ad22",
+   "duration_s": 1800.0
+  },
+  "audio_loop_4m.m4a": {
+   "role": "audio_loop",
+   "sample_rate": 48000,
+   "loop_start_s": 0.5,
+   "loop_len_s": 240.0,
+   "margin_s": 0.5,
+   "crossfade_s": 2.0,
+   "source": "first 240 s of audio_allnight_60m.m4a (edit list honoured)",
+   "size_bytes": 3938687
+  }
+ },
+ "edit_lists": {
+  "audio_allnight_60m": {
+   "movie_timescale": 1000,
+   "media_time_before": 1024,
+   "media_time_after": 5120,
+   "segment_duration": 3600000
+  },
+  "audio_timer_15m": {
+   "movie_timescale": 1000,
+   "media_time_before": 1024,
+   "media_time_after": 5120,
+   "segment_duration": 900000
+  },
+  "audio_timer_30m": {
+   "movie_timescale": 1000,
+   "media_time_before": 1024,
+   "media_time_after": 5120,
+   "segment_duration": 1800000
+  }
+ },
+ "release_assets": {
+  "video_1080.mp4": {
+   "size_bytes": 57867926,
+   "sha256": "8dc042c1ee04f4ca78106b79314eba56914ed874bed59dcbc093e500253b9ec1",
+   "url": "https://github.com/Anatolek-AZ/loop-phone-test/releases/download/media-v1/cymatics-01__video_1080.mp4",
+   "note": "release asset (cross-origin, not used by the page)"
+  },
+  "audio_timer_60m.m4a": {
+   "size_bytes": 57889789,
+   "sha256": "0126dff6992cc4a6c7b7ccce033e6db3fe3ca4ab5b461dd179e215ee86fed222",
+   "url": "https://github.com/Anatolek-AZ/loop-phone-test/releases/download/media-v1/cymatics-01__audio_timer_60m.m4a",
+   "note": "release asset (cross-origin, not used by the page)"
+  },
+  "audio_timer_90m.m4a": {
+   "size_bytes": 87011866,
+   "sha256": "060b7cb8c2cdb4b9d82860d2b36aecb158730ac5c208d939e0d7d627da156bac",
+   "url": "https://github.com/Anatolek-AZ/loop-phone-test/releases/download/media-v1/cymatics-01__audio_timer_90m.m4a",
+   "note": "release asset (cross-origin, not used by the page)"
+  }
+ }
+}

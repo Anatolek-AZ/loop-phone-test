@@ -1,0 +1,16 @@
+{
+ "sessions": [
+  {
+   "id": "cymatics-01",
+   "title": "Graphite & Sage",
+   "source": "pilot",
+   "base": "pilots/cymatics-01/"
+  },
+  {
+   "id": "mycelium-01",
+   "title": "Nocturne Hyphae",
+   "source": "pilot",
+   "base": "pilots/mycelium-01/"
+  }
+ ]
+}

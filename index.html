@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Loop Phone Test</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#120a1c">
+<meta name="apple-mobile-web-app-capable" content="yes" id="meta-awac">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Loop Test">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest" id="link-manifest">
+<script>
+  // ?display=minimal-ui -> swap manifest (and drop apple-mobile-web-app-capable) BEFORE "Add to Home Screen"
+  (function () {
+    var p = new URLSearchParams(location.search);
+    if (p.get('display') === 'minimal-ui' || p.get('src') === 'homescreen-mui') {
+      document.getElementById('link-manifest').href = 'manifest-minimal.webmanifest';
+      var m = document.getElementById('meta-awac'); m.parentNode.removeChild(m);
+      document.documentElement.dataset.mui = '1';
+    }
+  })();
+</script>
+<style>
+  :root { color-scheme: dark; --bg:#120a1c; --card:#1d1229; --fg:#eee6f5; --mut:#a796b8; --ok:#7ddf9a; --bad:#ff8a8a; --acc:#f3c9a8; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.4 -apple-system, system-ui, sans-serif;
+         padding: env(safe-area-inset-top) 12px calc(env(safe-area-inset-bottom) + 40px); }
+  h1 { font-size:20px; margin:14px 0 4px; } h2 { font-size:16px; margin:0 0 8px; color:var(--acc); }
+  .card { background:var(--card); border-radius:12px; padding:12px; margin:12px 0; }
+  .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:6px 0; }
+  button, select { font:inherit; color:var(--fg); background:#2f1f42; border:1px solid #4a3463; border-radius:10px; padding:9px 12px; }
+  button:active { background:#4a3463; }
+  button.primary { background:#5b3a7e; }
+  .mut { color:var(--mut); font-size:13px; } .ok { color:var(--ok); } .bad { color:var(--bad); }
+  .kv { display:grid; grid-template-columns: max-content 1fr; gap:2px 10px; font-size:13px; font-variant-numeric: tabular-nums; }
+  .kv b { color:var(--mut); font-weight:500; }
+  video { width:100%; aspect-ratio:16/9; background:#000; border-radius:10px; display:block; }
+  .log { background:#0c0612; border-radius:8px; padding:6px 8px; font:11px/1.35 ui-monospace, Menlo, monospace; max-height:150px; overflow:auto; white-space:pre-wrap; margin-top:6px; }
+  .big { font-size:28px; font-variant-numeric: tabular-nums; font-weight:600; }
+  label.chk { display:flex; gap:8px; align-items:flex-start; padding:5px 0; border-bottom:1px solid #2a1c3a; }
+  label.chk input { margin-top:3px; transform:scale(1.25); }
+  textarea { width:100%; min-height:60px; font:inherit; background:#0c0612; color:var(--fg); border:1px solid #4a3463; border-radius:8px; padding:6px; }
+  .pill { display:inline-block; padding:2px 8px; border-radius:20px; background:#2f1f42; font-size:12px; }
+</style>
+</head>
+<body>
+<h1>Loop phone test <span class="pill">throwaway</span></h1>
+<div class="mut">Test script: <a href="TEST_SCRIPT.html" style="color:var(--acc)">TEST_SCRIPT</a></div>
+<div class="mut" id="env"></div>
+
+<div class="card">
+  <h2>Session</h2>
+  <div class="row">
+    <select id="session"></select>
+    <select id="vres"><option value="720">video 720</option><option value="1080">video 1080</option></select>
+  </div>
+  <div class="mut" id="sessionInfo">loading…</div>
+</div>
+
+<!-- 1 -->
+<div class="card" id="t1">
+  <h2>1 · Background audio (screen locked)</h2>
+  <div class="mut">Press Play, then lock the phone for 1–2 min (a soft bell rings every 15 s in placeholders). Unlock and read “while hidden”. Repeat from the Home Screen icon.</div>
+  <div class="row">
+    <button class="primary" id="btnPlay">▶︎ Play all-night</button>
+    <button id="btnPause">❚❚ Pause</button>
+    <button id="btnWake">Wake lock: off</button>
+  </div>
+  <div class="big" id="elapsed">0:00</div>
+  <div class="kv">
+    <b>mode</b><span id="mode">-</span>
+    <b>audio src</b><span id="asrc">-</span>
+    <b>audio time</b><span id="atime">-</span>
+    <b>audio state</b><span id="astate">-</span>
+    <b>last hidden</b><span id="hiddenRes">-</span>
+  </div>
+  <div class="log" id="log1"></div>
+</div>
+
+<!-- 2 -->
+<div class="card" id="t2">
+  <h2>2 · Media Session (lock screen controls)</h2>
+  <div class="mut">Lock the phone: check title / artwork / buttons. iOS shows ±seek buttons instead of next/prev when seek handlers exist; toggle to compare.</div>
+  <div class="row">
+    <label><input type="checkbox" id="msSeek" checked> seek ±15 s handlers</label>
+    <label><input type="checkbox" id="msTrack" checked> next/prev handlers</label>
+  </div>
+  <div class="kv"><b>supported</b><span id="msSup">-</span><b>last action</b><span id="msLast">-</span><b>position</b><span id="msPos">-</span></div>
+  <div class="log" id="log2"></div>
+</div>
+
+<!-- 3 -->
+<div class="card" id="t3">
+  <h2>3 · Looping muted visual + separate audio</h2>
+  <video id="vid" muted playsinline loop preload="auto" webkit-playsinline></video>
+  <div class="kv">
+    <b>video</b><span id="vstate">-</span>
+    <b>video t / loops</b><span id="vtime">-</span>
+    <b>audio t mod loop</b><span id="amod">-</span>
+    <b>drift</b><span id="drift">-</span>
+    <b>auto-resume</b><span id="vres2">-</span>
+  </div>
+  <div class="mut">Drift = video position vs audio position modulo the loop length (they are intentionally independent; this shows how far they wander and what happens across lock/unlock).</div>
+  <div class="log" id="log3"></div>
+</div>
+
+<!-- 4 -->
+<div class="card" id="t4">
+  <h2>4 · Download once, play offline</h2>
+  <div class="mut">Download, then turn on Airplane Mode, force-quit and reopen, and press Play. Revisit over several days to see if Safari evicts it.</div>
+  <div class="row">
+    <button class="primary" id="btnDl">⬇︎ Download session</button>
+    <button id="btnPersist">Request persist()</button>
+    <button id="btnClear">Delete cached media</button>
+  </div>
+  <div class="kv">
+    <b>service worker</b><span id="swState">-</span>
+    <b>online</b><span id="online">-</span>
+    <b>cached files</b><span id="cacheFiles">-</span>
+    <b>persisted</b><span id="persisted">-</span>
+    <b>estimate</b><span id="estimate">-</span>
+    <b>served from</b><span id="servedFrom">-</span>
+  </div>
+  <div class="mut" style="margin-top:6px">“Still cached?” history (one entry per page load):</div>
+  <div class="log" id="evictLog"></div>
+  <div class="log" id="log4"></div>
+</div>
+
+<!-- 5 -->
+<div class="card" id="t5">
+  <h2>5 · Sleep timer (pre-faded files)</h2>
+  <div class="mut">Picks the timer file with the fade baked in (no JS volume). Lock the phone and listen for the fade, then silence.</div>
+  <div class="row" id="timerBtns"></div>
+  <div class="big" id="countdown">--:--</div>
+  <div class="log" id="log5"></div>
+</div>
+
+
+<!-- 6 -->
+<div class="card" id="t6">
+  <h2>6 · Pick any duration (Web Audio loop + scheduled fade)</h2>
+  <div class="mut">Loops a 4-min clip of this session’s all-night audio (2 s crossfade baked in) with Web Audio, for as long as you choose. The 3-min fade to silence is scheduled on the audio clock up front, so it should still fire while the phone is locked. Compare with test 5 (fixed timer files).</div>
+  <div class="row" style="margin-top:8px">
+    <input type="range" id="durSlider" min="10" max="480" step="5" value="30" style="flex:1;min-width:200px" aria-label="Duration">
+    <span class="big" id="durLabel" style="font-size:20px;min-width:110px">30 min</span>
+  </div>
+  <div class="row">
+    <label>keep-alive:
+      <select id="keepMode">
+        <option value="silent">A · silent &lt;audio&gt; loop (default)</option>
+        <option value="none">B · Web Audio only</option>
+        <option value="stream">C · Web Audio → &lt;audio&gt; (MediaStream)</option>
+      </select>
+    </label>
+  </div>
+  <div class="row">
+    <button class="primary" id="btnAnyStart">▶︎ Start</button>
+    <button id="btnAnyPause">❚❚ Pause</button>
+    <button id="btnAnyStop">■ Stop</button>
+  </div>
+  <div class="big" id="anyClock">--:--</div>
+  <div class="kv">
+    <b>plan</b><span id="anyPlan">-</span>
+    <b>audio clock</b><span id="anyCtx">-</span>
+    <b>gain now</b><span id="anyGain">-</span>
+    <b>loop</b><span id="anyLoop">-</span>
+    <b>last hidden</b><span id="anyHidden">-</span>
+    <b>result</b><span id="anyResult">-</span>
+  </div>
+  <div class="log" id="log6"></div>
+</div>
+
+<div class="card" id="results">
+  <h2>Results checklist</h2>
+  <div id="checklist"></div>
+  <textarea id="notes" placeholder="Notes (iOS version, what you heard, anything odd)…"></textarea>
+  <div class="row"><button class="primary" id="btnCopy">Copy results</button><button id="btnReset">Reset checklist</button><span id="copyMsg" class="mut"></span></div>
+</div>
+
+<div class="mut">Event log (all):</div>
+<div class="log" id="logAll" style="max-height:220px"></div>
+
+<audio id="aud" preload="auto" playsinline></audio>
+<audio id="keep" preload="auto" playsinline></audio>
+<script src="app.js"></script>
+</body>
+</html>
