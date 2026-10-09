@@ -1,0 +1,89 @@
+# Loop phone test: test script
+
+**Page:** https://anatolek-az.github.io/loop-phone-test/
+**Throwaway.** It isn't linked from anywhere, and it's planned for deletion on **Thu Oct 15, 2026**.
+
+Before you start:
+- Turn the volume up to about 50% and switch Low Power Mode off.
+- Leave the ringer/silent switch as it normally is, and write down which position it was in.
+- Each test fills in the on-page **Results checklist**. At the end, tap **Copy results** and paste the text back.
+- **Timing rule:** the "plan" line in test 6 shows the exact clock times for *fade starts* and *silent + stop*. Write them down before you lock the phone.
+
+Two sleep options are compared side by side:
+- **Test 5 · fixed timer:** a pre-faded audio file, either 15 or 30 min.
+- **Test 6 · pick any duration:** a 4-min Web Audio loop with a 3-min fade that's scheduled up front.
+
+---
+
+## A. iPhone · Safari tab
+
+1. Open the page in **Safari**. Pick a session at the top and let it load (the "session" line shows the file count).
+2. **Test 6 smoke run (2 min):** Set the slider to **10 min**, keep keep-alive on **A**, and tap **Start**. Check that the sound fades in within about 1 s and that the timer counts.
+   - PASS: you hear the drone and both "elapsed" and "left" move.
+   - FAIL: there's no sound, or the result line shows ❌.
+3. **Seam check:** Keep listening past the **4:00** mark on the elapsed clock, where the loop restarts.
+   - PASS: there's no click, gap, or sudden change in sound.
+   - FAIL: you hear a click, a dropout, or a jump.
+4. **Lock-screen controls:** Lock the phone and look at the lock screen. Tap Pause, wait 10 s, then tap Play.
+   - PASS: you see the title and artwork, and pause and play both work.
+   - FAIL: there are no controls, or they don't work.
+5. **Long locked run with fade:** Tap **Stop**. Set the slider to **35 min**, tap **Start**, write down the plan times, and **lock the phone for the whole run** without touching it.
+   - PASS: you can still hear audio at about 30 min.
+   - FAIL: the audio stops before the fade time.
+6. **Fade while locked:** With the phone still locked, listen around the planned *fade starts* time.
+   - PASS: the sound fades smoothly over about 3 min and goes silent within **±1 min** of the planned *silent + stop* time.
+   - FAIL: there's no fade, it cuts off hard, or the timing is off by more than 1 min.
+7. **After unlock:** Unlock and read test 6.
+   - PASS: "last hidden" shows the audio clock advanced about the same as the locked time (✅), and "result" shows ⏹ ended … *while HIDDEN/locked* in green.
+   - FAIL: either line shows ❌, or "result" is red.
+8. **Comparison:** In **test 5**, tap **30 min**, lock the phone, and let it run to the end.
+   - PASS: you hear the baked fade and then silence at about 30 min.
+   - Note which of test 5 and test 6 felt better.
+   - If step 5 or 6 failed with keep-alive **A**, repeat steps 5–7 once with **B**, then with **C**, and note the results.
+
+## B. iPhone · Home Screen app
+
+1. In Safari, go to Share → **Add to Home Screen** (it's named "Loop Test"). Close Safari, then open the page **from the icon**. The grey line at the top must say *HOME SCREEN app*.
+2. Repeat **A2** (10-min smoke run). PASS/FAIL is the same as A2.
+3. Repeat **A4** (lock-screen controls). PASS/FAIL is the same as A4.
+4. Repeat **A5** with the **35-min** slider, phone locked the whole run.
+   - PASS: you still hear audio at 30+ min.
+   - FAIL: it stops early.
+5. Repeat **A6**.
+   - PASS: you hear the fade and it stops within ±1 min of plan while locked.
+   - FAIL: there's no fade, or the timing is off.
+6. Repeat **A7** (read "last hidden" and "result").
+7. **Cold restart:** Swipe the app away, reopen it from the icon, and start test 6 for 10 min (this covers the known WebKit issue where audio fails after a relaunch).
+   - PASS: it plays.
+   - FAIL: there's silence or an error.
+8. **Comparison:** Run test 5 → **30 min** locked to the end, as in A8.
+
+## C. Android · Chrome
+
+1. Open the page in **Chrome**. Pick a session.
+2. Test 6 at **10 min**, keep-alive **A**, **Start**.
+   - PASS: you hear sound and the timers move.
+3. Lock-screen and notification controls: open the notification shade and lock the phone, then try pause and play.
+   - PASS: the media notification shows the title, and pause and play work.
+4. Listen past **4:00** for the seam.
+   - PASS: there's no click or gap.
+5. **Stop**, set the slider to **35 min**, **Start**, write down the plan times, and lock the phone for the whole run.
+   - PASS: you still hear audio at 30+ min.
+   - FAIL: it stops early.
+6. Keep the phone locked through the fade.
+   - PASS: it fades over about 3 min and stops within ±1 min of plan.
+   - FAIL: there's no fade, it cuts off, or the timing is off.
+7. Unlock and read "last hidden" and "result" (PASS means ✅ and a green result).
+8. **Comparison:** Test 5 → **30 min** locked to the end. Optional: *Add to Home screen / Install app* and repeat steps 5–7.
+
+---
+
+### Notes and known caveats
+- **Nothing in this script was run on a real phone.** The box can't drive an iPhone or Android device. It only ran desktop headless Chrome for the loop seam and a fast fade (`?fast=1`, where 1 min = 1 s, for debugging only).
+- **iOS Web Audio in the background isn't guaranteed.** Safari may suspend an AudioContext when the screen locks, especially with keep-alive **B**. That's the main thing this test answers.
+  - Keep-alive **A** plays a near-silent looping `<audio>` next to Web Audio, so iOS treats the page as media playback.
+  - **C** routes the Web Audio output through an `<audio>` element.
+- **Pausing moves the fade later** by the pause length, because the audio clock stops. Phone calls and Siri can interrupt it the same way, and the "plan" times don't update.
+- Test 6 holds the decoded 4-min loop in memory (about 90 MB). Older iPhones may reload the tab under memory pressure, so note it if that happens.
+- **Silent switch:** with keep-alive B, iOS may mute Web Audio when the ringer switch is on silent. Write down the switch position.
+- Offline: **Download session** (test 4) also caches the loop file, so test 6 works in Airplane Mode after a download.

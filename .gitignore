@@ -1,0 +1,6 @@
+/media/
+/bin/
+*.log
+.run/
+/build/
+/_site/
