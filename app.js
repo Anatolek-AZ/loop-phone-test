@@ -2,7 +2,7 @@
 'use strict';
 const $ = (id) => document.getElementById(id);
 const aud = $('aud'), vid = $('vid');
-const MEDIA_CACHE = 'tw-media-v1';
+const MEDIA_CACHE = 'tw-media-v2';   // must match sw.js MEDIA
 const LS = { checks: 'tw_checks_v1', notes: 'tw_notes_v1', downloads: 'tw_downloads_v1', evict: 'tw_evict_hist_v1', log: 'tw_log_v1' };
 const lsGet = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { log('all', 'localStorage write failed: ' + e); } };

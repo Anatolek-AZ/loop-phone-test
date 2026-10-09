@@ -2,8 +2,8 @@
 // - App shell: network-first, falls back to cache (so the page opens offline).
 // - Media (/media/, /pilots/): served from Cache Storage if downloaded, with Range -> 206 slicing
 //   (Safari requires 206 range responses to play <audio>/<video>). Otherwise passes to network.
-const SHELL = 'tw-shell-v4';
-const MEDIA = 'tw-media-v1';
+const SHELL = 'tw-shell-v5';
+const MEDIA = 'tw-media-v2';   // v2 (Oct 9): cymatics-01 audio v2 (air layer removed) -- drop stale downloaded audio
 const SHELL_FILES = ['./', './index.html', './app.js', './manifest.webmanifest', './manifest-minimal.webmanifest',
   './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png', './sessions.json', './keepalive_10s.m4a', './TEST_SCRIPT.md'];
 
@@ -12,7 +12,10 @@ self.addEventListener('install', (e) => {
 });
 self.addEventListener('activate', (e) => {
   e.waitUntil((async () => {
-    for (const k of await caches.keys()) if (k.startsWith('tw-shell-') && k !== SHELL) await caches.delete(k);
+    for (const k of await caches.keys()) {
+      if (k.startsWith('tw-shell-') && k !== SHELL) await caches.delete(k);
+      if (k.startsWith('tw-media-') && k !== MEDIA) await caches.delete(k);   // stale offline media
+    }
     await self.clients.claim();
   })());
 });
