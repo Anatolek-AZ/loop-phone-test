@@ -36,7 +36,7 @@ if [ ! -d build/gh-pages/.git ] && [ ! -f build/gh-pages/.git ]; then
   if git rev-parse -q --verify origin/gh-pages >/dev/null; then git worktree add -B gh-pages build/gh-pages origin/gh-pages
   else git worktree add --detach build/gh-pages && (cd build/gh-pages && git checkout -q --orphan gh-pages && git rm -rqf . >/dev/null 2>&1 || true); fi
 fi
-rsync -a --delete --exclude .git _site/ build/gh-pages/
+find build/gh-pages -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} + && cp -a _site/. build/gh-pages/
 ( cd build/gh-pages && git add -A && { git diff --cached --quiet || git commit -qm "deploy $(date -u +%Y-%m-%dT%H:%MZ)"; } && git push -q origin gh-pages )
 
 # 5. source branch
