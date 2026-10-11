@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Loop Phone Test</title>
+<title>Sleep audio phone test</title>
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#120a1c">
 <meta name="apple-mobile-web-app-capable" content="yes" id="meta-awac">
@@ -25,164 +25,268 @@
   })();
 </script>
 <style>
-  :root { color-scheme: dark; --bg:#120a1c; --card:#1d1229; --fg:#eee6f5; --mut:#a796b8; --ok:#7ddf9a; --bad:#ff8a8a; --acc:#f3c9a8; }
+  :root { color-scheme: dark; --bg:#120a1c; --card:#1d1229; --fg:#eee6f5; --mut:#a796b8; --ok:#7ddf9a; --bad:#ff8a8a; --acc:#f3c9a8; --pri:#c9a7f0; }
   * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.4 -apple-system, system-ui, sans-serif;
-         padding: env(safe-area-inset-top) 12px calc(env(safe-area-inset-bottom) + 40px); }
-  h1 { font-size:20px; margin:14px 0 4px; } h2 { font-size:16px; margin:0 0 8px; color:var(--acc); }
-  .card { background:var(--card); border-radius:12px; padding:12px; margin:12px 0; }
-  .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:6px 0; }
-  button, select { font:inherit; color:var(--fg); background:#2f1f42; border:1px solid #4a3463; border-radius:10px; padding:9px 12px; }
-  button:active { background:#4a3463; }
-  button.primary { background:#5b3a7e; }
-  .mut { color:var(--mut); font-size:13px; } .ok { color:var(--ok); } .bad { color:var(--bad); }
-  .kv { display:grid; grid-template-columns: max-content 1fr; gap:2px 10px; font-size:13px; font-variant-numeric: tabular-nums; }
+  html { scroll-padding-top: 12px; }
+  body { margin:0 auto; max-width:640px; background:var(--bg); color:var(--fg); font:16px/1.45 -apple-system, system-ui, sans-serif;
+         padding: calc(env(safe-area-inset-top) + 8px) 14px calc(env(safe-area-inset-bottom) + 110px); }
+  h1 { font-size:20px; margin:10px 0 10px; }
+  h2 { font-size:19px; margin:4px 0 10px; line-height:1.3; }
+  .intro { background:#2a1a3d; border:1px solid #4a3463; border-radius:14px; padding:12px 14px; margin:0 0 14px; }
+  .intro p { margin:0 0 4px; } .intro p:last-child { margin:0; }
+  .card { background:var(--card); border-radius:16px; padding:14px; margin:14px 0; }
+  .card.done-yes { box-shadow: inset 0 0 0 2px #2f6b45; } .card.done-no { box-shadow: inset 0 0 0 2px #7a3a3a; }
+  .meta { display:flex; justify-content:space-between; align-items:center; color:var(--mut); font-size:14px; }
+  .pill { display:inline-block; padding:2px 10px; border-radius:20px; background:#2f1f42; font-size:13px; color:var(--mut); }
+  ol.steps { margin:0 0 12px; padding-left:22px; } ol.steps li { margin:4px 0; }
+  button, select { font:inherit; color:var(--fg); background:#2f1f42; border:1px solid #4a3463; border-radius:12px; padding:10px 14px; }
+  button:active { background:#4a3463; } button:disabled { opacity:.6; }
+  .primary { display:block; width:100%; min-height:56px; font-size:18px; font-weight:600; background:var(--pri); color:#1a1024; border:0; margin:6px 0; }
+  .primary:active { background:#b48fe0; }
+  .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:8px 0; }
+  .small { font-size:15px; padding:8px 14px; }
+  .answer { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
+  .answer button { min-height:52px; font-size:17px; font-weight:600; }
+  .answer button.sel-yes { background:#24573a; border-color:var(--ok); } .answer button.sel-no { background:#5a2a2a; border-color:var(--bad); }
+  .status { font-size:15px; color:var(--mut); margin:6px 0; min-height:1.2em; }
+  .status.ok { color:var(--ok); } .status.bad { color:var(--bad); }
+  .clock { font-size:24px; font-variant-numeric: tabular-nums; font-weight:600; margin:4px 0; }
+  .mut { color:var(--mut); font-size:14px; } .ok { color:var(--ok); } .bad { color:var(--bad); }
+  label.pick { display:block; font-weight:600; margin-bottom:6px; }
+  select.big { width:100%; min-height:52px; font-size:18px; }
+  video { width:100%; aspect-ratio:16/9; background:#000; border-radius:12px; display:block; margin:6px 0; }
+  details.eng { margin-top:12px; border-top:1px solid #2a1c3a; padding-top:8px; }
+  details.eng > summary { color:var(--mut); font-size:14px; cursor:pointer; padding:4px 0; }
+  .kv { display:grid; grid-template-columns: max-content 1fr; gap:2px 10px; font-size:13px; font-variant-numeric: tabular-nums; word-break:break-word; margin:6px 0; }
   .kv b { color:var(--mut); font-weight:500; }
-  video { width:100%; aspect-ratio:16/9; background:#000; border-radius:10px; display:block; }
   .log { background:#0c0612; border-radius:8px; padding:6px 8px; font:11px/1.35 ui-monospace, Menlo, monospace; max-height:150px; overflow:auto; white-space:pre-wrap; margin-top:6px; }
-  .big { font-size:28px; font-variant-numeric: tabular-nums; font-weight:600; }
-  label.chk { display:flex; gap:8px; align-items:flex-start; padding:5px 0; border-bottom:1px solid #2a1c3a; }
-  label.chk input { margin-top:3px; transform:scale(1.25); }
-  textarea { width:100%; min-height:60px; font:inherit; background:#0c0612; color:var(--fg); border:1px solid #4a3463; border-radius:8px; padding:6px; }
-  .pill { display:inline-block; padding:2px 8px; border-radius:20px; background:#2f1f42; font-size:12px; }
+  label.chk { display:flex; gap:8px; align-items:flex-start; padding:5px 0; border-bottom:1px solid #2a1c3a; font-size:14px; }
+  textarea { width:100%; min-height:70px; font:inherit; background:#0c0612; color:var(--fg); border:1px solid #4a3463; border-radius:10px; padding:8px; }
+  input[type=range] { width:100%; height:36px; }
+  .hs { display:grid; grid-template-columns:44px 1fr; gap:8px 10px; align-items:center; margin:8px 0 4px; }
+  .hs .ic { width:44px; height:44px; border-radius:10px; background:#2f1f42; display:flex; align-items:center; justify-content:center; font-size:22px; }
+  .bar { position:fixed; left:0; right:0; bottom:0; z-index:10; background:rgba(18,10,28,.96); border-top:1px solid #3a2850;
+         padding:10px 14px calc(env(safe-area-inset-bottom) + 10px); display:flex; gap:10px; justify-content:center; }
+  .bar button { min-height:50px; font-size:15px; font-weight:600; flex:1; max-width:306px; padding:10px 8px; white-space:nowrap; }
+  .bar #btnNext { flex:1.25; }
+  .bar #btnNext { background:#2f1f42; } .bar #btnSend { background:var(--pri); color:#1a1024; border:0; }
+  #shareBox { display:none; } #shareBox.show { display:block; }
+  #shareText { min-height:220px; font:12px/1.35 ui-monospace, Menlo, monospace; }
+  .foot { color:var(--mut); font-size:13px; margin:18px 0; }
 </style>
 </head>
 <body>
-<h1>Loop phone test <span class="pill">throwaway</span></h1>
-<div class="mut">Test script: <a href="TEST_SCRIPT.html" style="color:var(--acc)">TEST_SCRIPT</a></div>
-<div class="mut" id="env"></div>
-
-<div class="card">
-  <h2>Session</h2>
-  <div class="row">
-    <select id="session"></select>
-    <select id="vres"><option value="720">video 720</option><option value="1080">video 1080</option></select>
-  </div>
-  <div class="mut" id="sessionInfo">loading…</div>
+<h1>Sleep audio phone test</h1>
+<div class="intro" id="intro">
+  <p><b>What this is:</b> a check (about 50 min in total) that sleep audio keeps playing on your iPhone.</p>
+  <p><b>Before you start:</b> volume up, ringer on, charger plugged in.</p>
+  <p><b>Step 1 of 6 is below.</b> Answer each card with “It worked” or “It didn’t”, then tap <b>Send results</b>.</p>
 </div>
 
-<!-- 1 -->
-<div class="card" id="t1">
-  <h2>1 · Background audio (screen locked)</h2>
-  <div class="mut">Press Play, then lock the phone for 1–2 min (a soft bell rings every 15 s in placeholders). Unlock and read “while hidden”. Repeat from the Home Screen icon.</div>
-  <div class="row">
-    <button class="primary" id="btnPlay">▶︎ Play all-night</button>
-    <button id="btnPause">❚❚ Pause</button>
-    <button id="btnWake">Wake lock: off</button>
-  </div>
-  <div class="big" id="elapsed">0:00</div>
-  <div class="kv">
-    <b>mode</b><span id="mode">-</span>
-    <b>audio src</b><span id="asrc">-</span>
-    <b>audio time</b><span id="atime">-</span>
-    <b>audio state</b><span id="astate">-</span>
-    <b>last hidden</b><span id="hiddenRes">-</span>
-  </div>
-  <div class="log" id="log1"></div>
+<div class="card" id="picker">
+  <label class="pick" for="session">Sound to test</label>
+  <select id="session" class="big"><option value="">Loading sounds…</option></select>
+  <div class="status" id="sessionPlain">Loading…</div>
+  <details class="eng"><summary>Engineer details</summary>
+    <div class="row"><label>Video quality <select id="vres"><option value="720">720p (default)</option><option value="1080">1080p</option></select></label></div>
+    <div class="mut" id="sessionInfo">loading…</div>
+    <div class="mut" id="env" style="margin-top:6px"></div>
+  </details>
 </div>
 
-<!-- 2 -->
-<div class="card" id="t2">
-  <h2>2 · Media Session (lock screen controls)</h2>
-  <div class="mut">Lock the phone: check title / artwork / buttons. iOS shows ±seek buttons instead of next/prev when seek handlers exist; toggle to compare.</div>
-  <div class="row">
-    <label><input type="checkbox" id="msSeek" checked> seek ±15 s handlers</label>
-    <label><input type="checkbox" id="msTrack" checked> next/prev handlers</label>
-  </div>
-  <div class="kv"><b>supported</b><span id="msSup">-</span><b>last action</b><span id="msLast">-</span><b>position</b><span id="msPos">-</span></div>
-  <div class="log" id="log2"></div>
+<!-- Step 1 (engineering test 2): Media Session -->
+<div class="card step" id="t2" data-step="1" data-key="lockscreen">
+  <div class="meta"><span>Step 1 of 6</span><span class="pill">about 2 min</span></div>
+  <h2>Do the play/pause buttons show on the lock screen?</h2>
+  <ol class="steps">
+    <li>Tap <b>Start sound</b>, then lock the phone.</li>
+    <li>On the lock screen, check for the sound’s name and picture. Tap Pause, wait 10 s, tap Play.</li>
+  </ol>
+  <button class="primary" data-act="play">▶︎ Start sound</button>
+  <div class="status" id="msPlain">No lock-screen button pressed yet.</div>
+  <div class="answer"><button data-ans="yes">It worked</button><button data-ans="no">It didn’t</button></div>
+  <details class="eng"><summary>Engineer details</summary>
+    <div class="mut">iOS shows ±seek buttons instead of next/prev when seek handlers exist; toggle to compare.</div>
+    <div class="row">
+      <label><input type="checkbox" id="msSeek" checked> seek ±15 s handlers</label>
+      <label><input type="checkbox" id="msTrack" checked> next/prev handlers</label>
+    </div>
+    <div class="kv"><b>supported</b><span id="msSup">-</span><b>last action</b><span id="msLast">-</span><b>position</b><span id="msPos">-</span></div>
+    <div class="log" id="log2"></div>
+  </details>
 </div>
 
-<!-- 3 -->
-<div class="card" id="t3">
-  <h2>3 · Looping muted visual + separate audio</h2>
+<!-- Step 2 (engineering test 3): muted looping video + separate audio -->
+<div class="card step" id="t3" data-step="2" data-key="picture">
+  <div class="meta"><span>Step 2 of 6</span><span class="pill">about 5 min</span></div>
+  <h2>Does the moving picture loop smoothly?</h2>
+  <ol class="steps">
+    <li>Tap <b>Play picture and sound</b> and watch until the counter below reaches the loop point (no jump or flash).</li>
+    <li>Lock the phone for a few seconds, unlock: the picture should start moving again on its own.</li>
+  </ol>
   <video id="vid" muted playsinline loop preload="auto" webkit-playsinline></video>
-  <div class="kv">
-    <b>video</b><span id="vstate">-</span>
-    <b>video t / loops</b><span id="vtime">-</span>
-    <b>audio t mod loop</b><span id="amod">-</span>
-    <b>drift</b><span id="drift">-</span>
-    <b>auto-resume</b><span id="vres2">-</span>
-  </div>
-  <div class="mut">Drift = video position vs audio position modulo the loop length (they are intentionally independent; this shows how far they wander and what happens across lock/unlock).</div>
-  <div class="log" id="log3"></div>
+  <button class="primary" data-act="play">▶︎ Play picture and sound</button>
+  <div class="status" id="vPlain">Not playing yet.</div>
+  <div class="answer"><button data-ans="yes">It worked</button><button data-ans="no">It didn’t</button></div>
+  <details class="eng"><summary>Engineer details</summary>
+    <div class="kv">
+      <b>video</b><span id="vstate">-</span>
+      <b>video t / loops</b><span id="vtime">-</span>
+      <b>audio t mod loop</b><span id="amod">-</span>
+      <b>drift</b><span id="drift">-</span>
+      <b>auto-resume</b><span id="vres2">-</span>
+    </div>
+    <div class="mut">Drift = video position vs audio position modulo the loop length (intentionally independent).</div>
+    <div class="log" id="log3"></div>
+  </details>
 </div>
 
-<!-- 4 -->
-<div class="card" id="t4">
-  <h2>4 · Download once, play offline</h2>
-  <div class="mut">Download, then turn on Airplane Mode, force-quit and reopen, and press Play. Revisit over several days to see if Safari evicts it.</div>
-  <div class="row">
-    <button class="primary" id="btnDl">⬇︎ Download session</button>
-    <button id="btnPersist">Request persist()</button>
-    <button id="btnClear">Delete cached media</button>
-  </div>
-  <div class="kv">
-    <b>service worker</b><span id="swState">-</span>
-    <b>online</b><span id="online">-</span>
-    <b>cached files</b><span id="cacheFiles">-</span>
-    <b>persisted</b><span id="persisted">-</span>
-    <b>estimate</b><span id="estimate">-</span>
-    <b>served from</b><span id="servedFrom">-</span>
-  </div>
-  <div class="mut" style="margin-top:6px">“Still cached?” history (one entry per page load):</div>
-  <div class="log" id="evictLog"></div>
-  <div class="log" id="log4"></div>
+<!-- Step 3 (engineering test 5): fixed pre-faded timer files -->
+<div class="card step" id="t5" data-step="3" data-key="timer">
+  <div class="meta"><span>Step 3 of 6</span><span class="pill">about 16 min</span></div>
+  <h2>Does the sleep timer fade out and stop?</h2>
+  <ol class="steps">
+    <li>Tap the timer button and lock the phone. Leave it alone.</li>
+    <li>Near the end, the sound should fade gently, then go silent.</li>
+  </ol>
+  <div id="timerPrimary"><button class="primary" disabled>Loading timer…</button></div>
+  <div class="clock" id="countdown" style="font-size:20px">Timer not running</div>
+  <div class="answer"><button data-ans="yes">It worked</button><button data-ans="no">It didn’t</button></div>
+  <details class="eng"><summary>Engineer details</summary>
+    <div class="mut">Plays a timer file with the fade baked in (no JS volume). Other lengths / cancel:</div>
+    <div class="row" id="timerBtns"></div>
+    <div class="log" id="log5"></div>
+  </details>
 </div>
 
-<!-- 5 -->
-<div class="card" id="t5">
-  <h2>5 · Sleep timer (pre-faded files)</h2>
-  <div class="mut">Picks the timer file with the fade baked in (no JS volume). Lock the phone and listen for the fade, then silence.</div>
-  <div class="row" id="timerBtns"></div>
-  <div class="big" id="countdown">--:--</div>
-  <div class="log" id="log5"></div>
+<!-- Step 4 (engineering test 1): background audio -->
+<div class="card step" id="t1" data-step="4" data-key="locked">
+  <div class="meta"><span>Step 4 of 6</span><span class="pill">about 10 min</span></div>
+  <h2>Does sound keep playing when the phone is locked?</h2>
+  <ol class="steps">
+    <li>Tap <b>Play all night</b>, then lock the phone for at least 10 minutes.</li>
+    <li>Unlock. The line below says whether the page heard it keep playing.</li>
+  </ol>
+  <button class="primary" id="btnPlay">▶︎ Play all night</button>
+  <div class="row"><button class="small" id="btnPause">❚❚ Pause</button></div>
+  <div class="status" id="lockPlain">Not tested yet.</div>
+  <div class="answer"><button data-ans="yes">It worked</button><button data-ans="no">It didn’t</button></div>
+  <details class="eng"><summary>Engineer details</summary>
+    <div class="row"><button class="small" id="btnWake">Wake lock: off</button></div>
+    <div class="clock" id="elapsed" style="font-size:18px">0:00</div>
+    <div class="kv">
+      <b>mode</b><span id="mode">-</span>
+      <b>audio src</b><span id="asrc">-</span>
+      <b>audio time</b><span id="atime">-</span>
+      <b>audio state</b><span id="astate">-</span>
+      <b>last hidden</b><span id="hiddenRes">-</span>
+    </div>
+    <div class="log" id="log1"></div>
+  </details>
 </div>
 
+<!-- Step 5 (engineering test 6): pick any duration -->
+<div class="card step" id="t6" data-step="5" data-key="custom">
+  <div class="meta"><span>Step 5 of 6</span><span class="pill">about 15 min</span></div>
+  <h2>Does a custom-length timer fade and stop?</h2>
+  <ol class="steps">
+    <li>Leave the length at <b>15 min</b> (or pick any length), tap <b>Start custom timer</b>, and lock the phone.</li>
+    <li>It should fade out over the last 3 min and go silent at the time shown below.</li>
+  </ol>
+  <div class="row">
+    <input type="range" id="durSlider" min="10" max="480" step="5" value="15" aria-label="Timer length">
+  </div>
+  <div class="clock" id="durLabel" style="font-size:20px">15 min</div>
+  <button class="primary" id="btnAnyStart">▶︎ Start custom timer</button>
+  <div class="row"><button class="small" id="btnAnyPause">❚❚ Pause</button><button class="small" id="btnAnyStop">■ Stop</button></div>
+  <div class="clock" id="anyClock" style="font-size:18px"></div>
+  <div class="status" id="anyPlain">Not started.</div>
+  <div class="answer"><button data-ans="yes">It worked</button><button data-ans="no">It didn’t</button></div>
+  <details class="eng"><summary>Engineer details</summary>
+    <div class="mut">Loops a 4-min clip of this sound with Web Audio (2 s crossfade baked in); the 3-min fade and stop are scheduled on the audio clock up front. If it fails with A, retry with B, then C.</div>
+    <div class="row">
+      <label>keep-alive:
+        <select id="keepMode">
+          <option value="silent">A · silent &lt;audio&gt; loop (default)</option>
+          <option value="none">B · Web Audio only</option>
+          <option value="stream">C · Web Audio → &lt;audio&gt; (MediaStream)</option>
+        </select>
+      </label>
+    </div>
+    <div class="kv">
+      <b>plan</b><span id="anyPlan">-</span>
+      <b>audio clock</b><span id="anyCtx">-</span>
+      <b>gain now</b><span id="anyGain">-</span>
+      <b>loop</b><span id="anyLoop">-</span>
+      <b>last hidden</b><span id="anyHidden">-</span>
+      <b>result</b><span id="anyResult">-</span>
+    </div>
+    <div class="log" id="log6"></div>
+  </details>
+</div>
 
-<!-- 6 -->
-<div class="card" id="t6">
-  <h2>6 · Pick any duration (Web Audio loop + scheduled fade)</h2>
-  <div class="mut">Loops a 4-min clip of this session’s all-night audio (2 s crossfade baked in) with Web Audio, for as long as you choose. The 3-min fade to silence is scheduled on the audio clock up front, so it should still fire while the phone is locked. Compare with test 5 (fixed timer files).</div>
-  <div class="row" style="margin-top:8px">
-    <input type="range" id="durSlider" min="10" max="480" step="5" value="30" style="flex:1;min-width:200px" aria-label="Duration">
-    <span class="big" id="durLabel" style="font-size:20px;min-width:110px">30 min</span>
-  </div>
-  <div class="row">
-    <label>keep-alive:
-      <select id="keepMode">
-        <option value="silent">A · silent &lt;audio&gt; loop (default)</option>
-        <option value="none">B · Web Audio only</option>
-        <option value="stream">C · Web Audio → &lt;audio&gt; (MediaStream)</option>
-      </select>
-    </label>
-  </div>
-  <div class="row">
-    <button class="primary" id="btnAnyStart">▶︎ Start</button>
-    <button id="btnAnyPause">❚❚ Pause</button>
-    <button id="btnAnyStop">■ Stop</button>
-  </div>
-  <div class="big" id="anyClock">--:--</div>
-  <div class="kv">
-    <b>plan</b><span id="anyPlan">-</span>
-    <b>audio clock</b><span id="anyCtx">-</span>
-    <b>gain now</b><span id="anyGain">-</span>
-    <b>loop</b><span id="anyLoop">-</span>
-    <b>last hidden</b><span id="anyHidden">-</span>
-    <b>result</b><span id="anyResult">-</span>
-  </div>
-  <div class="log" id="log6"></div>
+<!-- Step 6 (engineering test 4): offline -->
+<div class="card step" id="t4" data-step="6" data-key="offline">
+  <div class="meta"><span>Step 6 of 6</span><span class="pill">about 5 min</span></div>
+  <h2>Does it play with no internet?</h2>
+  <ol class="steps">
+    <li>Tap <b>Download this sound</b> and wait for “Downloaded”.</li>
+    <li>Turn on Airplane Mode, swipe Safari closed, reopen this page and tap <b>Play downloaded sound</b>.</li>
+  </ol>
+  <button class="primary" id="btnDl">⬇︎ Download this sound</button>
+  <div class="row"><button class="small" data-act="play">▶︎ Play downloaded sound</button></div>
+  <div class="status" id="dlPlain">Not downloaded yet.</div>
+  <div class="answer"><button data-ans="yes">It worked</button><button data-ans="no">It didn’t</button></div>
+  <details class="eng"><summary>Engineer details</summary>
+    <div class="row"><button class="small" id="btnPersist">Request persist()</button><button class="small" id="btnClear">Delete cached media</button></div>
+    <div class="kv">
+      <b>service worker</b><span id="swState">-</span>
+      <b>online</b><span id="online">-</span>
+      <b>cached files</b><span id="cacheFiles">-</span>
+      <b>persisted</b><span id="persisted">-</span>
+      <b>estimate</b><span id="estimate">-</span>
+      <b>served from</b><span id="servedFrom">-</span>
+    </div>
+    <div class="mut" style="margin-top:6px">“Still cached?” history (one entry per page load; revisit over several days):</div>
+    <div class="log" id="evictLog"></div>
+    <div class="log" id="log4"></div>
+  </details>
+</div>
+
+<!-- Optional step 7: Home Screen app -->
+<div class="card step" id="t7" data-step="7" data-key="homescreen">
+  <div class="meta"><span>Optional extra</span><span class="pill">about 10 min</span></div>
+  <h2>Does it also work as a Home Screen app?</h2>
+  <div class="mut">Only if you have time. It tells us whether an app icon behaves differently from a Safari tab.</div>
+  <div class="hs"><div class="ic">⬆︎</div><div>In Safari, tap the <b>Share</b> button (square with an arrow).</div>
+    <div class="ic">＋</div><div>Choose <b>Add to Home Screen</b>, then <b>Add</b>. The icon is named “Loop Test”.</div>
+    <div class="ic">▢</div><div>Close Safari, open <b>Loop Test</b> from the Home Screen and repeat Step 4.</div></div>
+  <div class="status" id="hsPlain"></div>
+  <div class="answer"><button data-ans="yes">It worked</button><button data-ans="no">It didn’t</button></div>
 </div>
 
 <div class="card" id="results">
-  <h2>Results checklist</h2>
-  <div id="checklist"></div>
-  <textarea id="notes" placeholder="Notes (iOS version, what you heard, anything odd)…"></textarea>
-  <div class="row"><button class="primary" id="btnCopy">Copy results</button><button id="btnReset">Reset checklist</button><span id="copyMsg" class="mut"></span></div>
+  <h2>Anything odd?</h2>
+  <textarea id="notes" placeholder="Optional notes: what you heard, iOS version, anything strange…"></textarea>
+  <div class="status" id="answeredPlain"></div>
+  <div id="shareBox">
+    <div class="mut" id="copyMsg" style="margin:8px 0"></div>
+    <textarea id="shareText" readonly></textarea>
+  </div>
+  <details class="eng"><summary>Engineer details: detailed checklist and full log</summary>
+    <div class="mut">Optional. Tap a box to cycle ☐ → ✅ → ❌ → ➖.</div>
+    <div id="checklist"></div>
+    <div class="row"><button class="small" id="btnReset">Reset all answers</button></div>
+    <div class="mut">Event log (all):</div>
+    <div class="log" id="logAll" style="max-height:220px"></div>
+  </details>
 </div>
+<div class="foot">Throwaway test page, not linked anywhere. Planned deletion Thu Oct 15, 2026. Nothing is sent anywhere unless you share it.</div>
 
-<div class="mut">Event log (all):</div>
-<div class="log" id="logAll" style="max-height:220px"></div>
+<div class="bar">
+  <button id="btnNext">Step 1 of 6 · Next →</button>
+  <button id="btnSend">Send results</button>
+</div>
 
 <audio id="aud" preload="auto" playsinline></audio>
 <audio id="keep" preload="auto" playsinline></audio>
