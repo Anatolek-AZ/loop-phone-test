@@ -3,7 +3,7 @@
 const $ = (id) => document.getElementById(id);
 const aud = $('aud'), vid = $('vid');
 const MEDIA_CACHE = 'tw-media-v2';   // must match sw.js MEDIA
-const LS = { checks: 'tw_checks_v1', notes: 'tw_notes_v1', downloads: 'tw_downloads_v1', evict: 'tw_evict_hist_v1', log: 'tw_log_v1' };
+const LS = { answers: 'tw_answers_v2', sessionPick: 'tw_session_pick_v2', checks: 'tw_checks_v1', notes: 'tw_notes_v1', downloads: 'tw_downloads_v1', evict: 'tw_evict_hist_v1', log: 'tw_log_v1' };
 const lsGet = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { log('all', 'localStorage write failed: ' + e); } };
 
@@ -61,10 +61,11 @@ async function loadSessions() {
   } catch (e) { log('all', 'sessions.json failed (offline?): ' + e); sessions = lsGet('tw_sessions_cache', []); }
   if (sessions.length) lsSet('tw_sessions_cache', sessions);
   const sel = $('session'); sel.innerHTML = '';
-  sessions.forEach((s, i) => { const o = document.createElement('option'); o.value = i; o.textContent = `${s.title} (${s.source})`; sel.appendChild(o); });
-  const pref = sessions.findIndex((s) => s.source === 'pilot');
+  sessions.forEach((s, i) => { const o = document.createElement('option'); o.value = i; o.textContent = s.title || s.id; sel.appendChild(o); });
+  const saved = sessions.findIndex((s) => s.id === lsGet(LS.sessionPick, null));
+  const pref = saved >= 0 ? saved : sessions.findIndex((s) => s.source === 'pilot');
   if (sessions.length) await selectSession(pref >= 0 ? pref : 0);
-  else $('sessionInfo').textContent = 'No sessions found.';
+  else { sel.innerHTML = '<option value="">No sounds found: check your internet and reload</option>'; $('sessionInfo').textContent = 'No sessions found.'; $('sessionPlain').textContent = 'No sounds found. Check your internet and reload.'; }
 }
 async function selectSession(i) {
   const s = sessions[i]; if (!s) return;
@@ -73,7 +74,7 @@ async function selectSession(i) {
   let m = null;
   if (r && r.ok) m = await r.json();
   else { const c = await caches.open(MEDIA_CACHE); const cr = await c.match(s.base + 'manifest.json'); if (cr) m = await cr.json(); }
-  if (!m) { $('sessionInfo').textContent = 'manifest.json not reachable for ' + s.id; return; }
+  if (!m) { $('sessionInfo').textContent = 'manifest.json not reachable for ' + s.id; $('sessionPlain').textContent = `Couldn't load “${s.title}”. Check your internet and reload.`; $('sessionPlain').className = 'status bad'; return; }
   const files = normalizeManifest(m);
   session = { ...s, manifest: m, list: files,
     allnight: files.find((f) => f.role === 'audio_allnight'),
@@ -83,6 +84,8 @@ async function selectSession(i) {
     loop: files.find((f) => f.role === 'audio_loop') };
   $('sessionInfo').textContent = `${m.title || s.id} · ${s.source}${m.placeholder ? ' (placeholder)' : ''} · ${files.length} files · base ${s.base}`;
   log('all', `session ${s.id} loaded (${s.source}), ${files.length} files`);
+  lsSet(LS.sessionPick, s.id);
+  $('sessionPlain').textContent = `Ready: “${m.title || s.title || s.id}”. Every step below uses this sound.`; $('sessionPlain').className = 'status ok';
   setVideo(); buildTimerButtons(); setMediaMetadata();
   if (!playing) setAudio(session.allnight, true);
   refreshCacheStatus(); checkServedFrom();
@@ -127,7 +130,9 @@ async function play() {
 function pause(reason = 'button') {
   aud.pause(); vid.pause(); playing = false; videoWanted = false; log(1, 'pause (' + reason + ')');
 }
-$('btnPlay').onclick = () => { if (anyActive()) anyStop('test 1 started'); if (timerMode) cancelTimer(false); setAudio(session.allnight, true); play(); };
+const playAllNight = () => { if (!session) return; if (anyActive()) anyStop('test 1 started'); if (timerMode) cancelTimer(false); setAudio(session.allnight, true); play(); };
+$('btnPlay').onclick = playAllNight;
+document.querySelectorAll('[data-act="play"]').forEach((b) => { b.onclick = playAllNight; });
 $('btnPause').onclick = () => pause();
 aud.addEventListener('timeupdate', () => {
   const c = aud.currentTime, d = aud.duration;
@@ -157,6 +162,7 @@ document.addEventListener('visibilitychange', () => {
     const ok = !hid.paused && adv > dt * 0.9;
     const msg = `while hidden ${fmtDur(dt)}: audio advanced ${fmtDur(adv)}${ok ? ' ✅ kept playing' : hid.paused ? ' (was paused)' : ' ❌ stopped/stalled'} · now ${aud.paused ? 'paused' : 'playing'} · ${hiddenTimeupdates} timeupdates fired in bg`;
     $('hiddenRes').textContent = msg; $('hiddenRes').className = ok ? 'ok' : hid.paused ? '' : 'bad';
+    if (!hid.paused) { $('lockPlain').textContent = ok ? `Page check: ✅ sound kept playing for ${fmtDur(dt)} while locked.` : `Page check: ❌ sound stopped while locked (played ${fmtDur(adv)} of ${fmtDur(dt)}).`; $('lockPlain').className = 'status ' + (ok ? 'ok' : 'bad'); }
     log(1, msg);
     log(3, `unlock: video was ${hid.vpaused ? 'paused' : 'playing'} at hide, now ${vid.paused ? 'paused' : 'playing'}`);
     if (videoWanted && vid.paused) {
@@ -192,7 +198,7 @@ function setMediaMetadata() {
   art.push({ src: new URL('icons/icon-512.png', location.href).href, sizes: '512x512', type: 'image/png' });
   ms.metadata = new MediaMetadata({ title: (m.title || session.id) + (timerMode ? ` · ${timerMode} timer` : ''), artist: m.artist || 'Loop phone test', album: m.world || 'Loop phone test', artwork: art });
 }
-function msAction(a, fn) { try { ms.setActionHandler(a, fn ? (d) => { $('msLast').textContent = a + ' @ ' + fmtClock(); log(2, 'action ' + a + (d && d.seekTime != null ? ' ' + d.seekTime.toFixed(1) : '')); fn(d); } : null); } catch (e) { log(2, `setActionHandler(${a}) unsupported`); } }
+function msAction(a, fn) { try { ms.setActionHandler(a, fn ? (d) => { $('msLast').textContent = a + ' @ ' + fmtClock(); $('msPlain').textContent = `Last lock-screen button the page heard: ${a} at ${fmtClock()}`; log(2, 'action ' + a + (d && d.seekTime != null ? ' ' + d.seekTime.toFixed(1) : '')); fn(d); } : null); } catch (e) { log(2, `setActionHandler(${a}) unsupported`); } }
 function setHandlers() {
   if (!ms) return;
   msAction('play', () => (anyActive() ? anyResume('lock screen') : play()));
@@ -225,13 +231,14 @@ function updatePosition(force) {
 
 // ---------- 5: sleep timer ----------
 function buildTimerButtons() {
-  const box = $('timerBtns'); box.innerHTML = '';
-  if (!session.timers.length) { box.textContent = 'No timer files in manifest.'; return; }
-  session.timers.forEach((f) => {
+  const box = $('timerBtns'); box.innerHTML = ''; const pri = $('timerPrimary'); pri.innerHTML = '';
+  if (!session.timers.length) { box.textContent = 'No timer files in manifest.'; pri.textContent = 'No timer files for this sound.'; return; }
+  session.timers.forEach((f, i) => {
     const b = document.createElement('button'); const mins = f.timerMin || Math.round(f.dur / 60);
-    b.textContent = `${mins} min`; b.onclick = () => startTimer(f, mins); box.appendChild(b);
+    b.textContent = `${mins} min`; b.className = 'small'; b.onclick = () => startTimer(f, mins); box.appendChild(b);
+    if (i === 0) { const p = document.createElement('button'); p.className = 'primary'; p.textContent = `▶︎ Start ${mins}-min sleep timer`; p.onclick = () => startTimer(f, mins); pri.appendChild(p); }
   });
-  const c = document.createElement('button'); c.textContent = 'Cancel → all-night'; c.onclick = () => cancelTimer(true); box.appendChild(c);
+  const c = document.createElement('button'); c.className = 'small'; c.textContent = 'Cancel → all-night'; c.onclick = () => cancelTimer(true); box.appendChild(c);
 }
 function startTimer(f, mins) {
   if (anyActive()) anyStop('test 5 started');
@@ -248,7 +255,7 @@ aud.addEventListener('ended', () => {
 });
 
 // ---------- 4: offline ----------
-let swReg = null;
+let swReg = null, btnDlBusy = false;
 async function registerSW() {
   if (!('serviceWorker' in navigator)) { $('swState').textContent = 'not supported'; return; }
   try {
@@ -267,7 +274,7 @@ $('btnDl').onclick = async () => {
   if (!session) return;
   const cache = await caches.open(MEDIA_CACHE);
   const items = filesToCache(); let done = 0, total = 0;
-  const btn = $('btnDl'); btn.disabled = true;
+  const btn = $('btnDl'); btn.disabled = true; btnDlBusy = true; $('dlPlain').textContent = 'Downloading… keep this page open.';
   try {
     for (const { path, f } of items) {
       const res = await fetch(path, { cache: 'reload' });
@@ -282,9 +289,10 @@ $('btnDl').onclick = async () => {
     }
     const dl = lsGet(LS.downloads, {}); dl[session.id] = { ts: new Date().toISOString(), base: session.base, files: items.map((i) => i.path), bytes: total }; lsSet(LS.downloads, dl);
     log(4, `✅ download complete: ${done} files, ${(total / 1e6).toFixed(1)} MB`);
+    $('dlPlain').textContent = `Downloaded ✓ (${(total / 1e6).toFixed(0)} MB). Now turn on Airplane Mode.`; $('dlPlain').className = 'status ok';
     if (navigator.storage && navigator.storage.persist) { const p = await navigator.storage.persist(); log(4, 'persist() after download → ' + p); }
-  } catch (e) { log(4, '❌ download failed: ' + e); }
-  btn.disabled = false; btn.textContent = '⬇︎ Download session';
+  } catch (e) { log(4, '❌ download failed: ' + e); $('dlPlain').textContent = 'Download failed. Check your internet and try again.'; $('dlPlain').className = 'status bad'; }
+  btn.disabled = false; btnDlBusy = false; btn.textContent = '⬇︎ Download this sound';
   refreshCacheStatus(); checkServedFrom();
 };
 $('btnPersist').onclick = async () => {
@@ -301,6 +309,11 @@ async function refreshCacheStatus() {
     const c = await caches.open(MEDIA_CACHE); const keys = await c.keys(); let bytes = 0;
     for (const k of keys) { const r = await c.match(k); bytes += Number(r.headers.get('content-length')) || 0; }
     $('cacheFiles').textContent = `${keys.length} files · ${(bytes / 1e6).toFixed(1)} MB`;
+    const have = session ? (lsGet(LS.downloads, {})[session.id]) : null;
+    if (!btnDlBusy) {
+      if (have && keys.length) { $('dlPlain').textContent = navigator.onLine ? 'Downloaded ✓ Now turn on Airplane Mode and follow step 2 above.' : 'Downloaded ✓ · You are offline now: tap Play downloaded sound.'; $('dlPlain').className = 'status ok'; }
+      else { $('dlPlain').textContent = navigator.onLine ? 'Not downloaded yet.' : 'You are offline and this sound is not downloaded.'; $('dlPlain').className = 'status'; }
+    }
   } catch (e) { $('cacheFiles').textContent = 'Cache API error: ' + e; }
   if (navigator.storage) {
     if (navigator.storage.persisted) $('persisted').textContent = String(await navigator.storage.persisted());
@@ -422,6 +435,7 @@ async function anyStart() {
   anySrc.onended = () => anyEnded('source ended on the audio clock');
   $('anyPlan').textContent = `${fmtMin(durMin)}${FAST ? ' (fast)' : ''} · fade starts ${fmtClock(new Date(any.fadeWall))} · silent + stop ${fmtClock(new Date(any.endWall))} · keep-alive ${mode}`;
   $('anyResult').textContent = 'running…'; $('anyResult').className = '';
+  $('anyPlain').textContent = `Fade starts ${fmtClock(new Date(any.fadeWall))} · silent by ${fmtClock(new Date(any.endWall))}. Lock the phone now.`; $('anyPlain').className = 'status';
   log(6, `▶︎ start ${fmtMin(durMin)}${FAST ? ' FAST' : ''}, mode ${mode}; fade ${fmtClock(new Date(any.fadeWall))} → stop ${fmtClock(new Date(any.endWall))} (scheduled on audio clock)`);
   setAnyMetadata(); setHandlers();
   if (ms) ms.playbackState = 'playing';
@@ -432,6 +446,8 @@ function anyEnded(why) {
   const late = (Date.now() - any.endWall - any.pausedMs) / 1000;
   const msg = `⏹ ended ${fmtClock()} (${why}); planned ${fmtClock(new Date(any.endWall + any.pausedMs))}, off by ${late >= 0 ? '+' : ''}${late.toFixed(1)} s${document.hidden ? ' — while HIDDEN/locked' : ''}`;
   log(6, msg); $('anyResult').textContent = msg; $('anyResult').className = Math.abs(late) <= 60 ? 'ok' : 'bad';
+  $('anyPlain').textContent = Math.abs(late) <= 60 ? `Page check: ✅ stopped on time${document.hidden ? ' while locked' : ''} (${fmtClock()}).` : `Page check: ❌ stopped ${Math.round(late)} s off plan.`;
+  $('anyPlain').className = 'status ' + (Math.abs(late) <= 60 ? 'ok' : 'bad');
   keep.pause(); if (ms) ms.playbackState = 'none';
 }
 let anyPausedAt = 0;
@@ -448,7 +464,7 @@ async function anyResume(reason = 'button') {
     log(6, 'resume (' + reason + ')'); if (ms) ms.playbackState = 'playing';
   }
 }
-function anyStop(reason = 'button') { if (any && !any.ended) { log(6, '■ stop (' + reason + ')'); any.ended = true; $('anyResult').textContent = 'stopped by user'; } anyTeardown(); if (ms) ms.playbackState = 'none'; }
+function anyStop(reason = 'button') { if (any && !any.ended) { log(6, '■ stop (' + reason + ')'); any.ended = true; $('anyResult').textContent = 'stopped by user'; $('anyPlain').textContent = 'Stopped.'; $('anyPlain').className = 'status'; } anyTeardown(); if (ms) ms.playbackState = 'none'; }
 $('btnAnyStart').onclick = anyStart;
 $('btnAnyPause').onclick = () => (ac && ac.state !== 'running' ? anyResume() : anyPause());
 $('btnAnyStop').onclick = () => anyStop();
@@ -475,7 +491,7 @@ document.addEventListener('visibilitychange', () => {
 });
 // ticker for test 6; also a wall-clock backstop in case 'ended' is missed
 setInterval(() => {
-  if (!ac || !any) { $('anyClock').textContent = '--:--'; return; }
+  if (!ac || !any) { $('anyClock').textContent = ''; return; }
   const t = ac.currentTime, el = Math.max(0, t - any.t0), rem = Math.max(0, any.tEnd - t);
   const sc = UNIT === 1 ? 60 : 1; // show fast-mode seconds as if minutes
   $('anyClock').textContent = any.ended ? 'done' : `${fmtDur(el * sc)} elapsed · ${fmtDur(rem * sc)} left${t >= any.tFade ? ' · fading' : ''}`;
@@ -487,7 +503,31 @@ setInterval(() => {
 // debug hooks for headless verification
 window.__any = () => ({ ac, any, gain: anyGain ? anyGain.gain.value : null, gainNode: anyGain, buf: anyBuf, FAST });
 
-// ---------- checklist ----------
+// ---------- notes ----------
+$('notes').value = lsGet(LS.notes, ''); $('notes').oninput = (e) => lsSet(LS.notes, e.target.value);
+
+// ---------- plain answers (It worked / It didn't), saved in localStorage ----------
+const stepCards = [...document.querySelectorAll('.card.step')].sort((x, y) => Number(x.dataset.step) - Number(y.dataset.step));
+const MAIN_STEPS = stepCards.filter((c) => Number(c.dataset.step) <= 6);
+function renderAnswers() {
+  const ans = lsGet(LS.answers, {});
+  stepCards.forEach((c) => {
+    const v = ans[c.dataset.key];
+    c.classList.toggle('done-yes', v === 'yes'); c.classList.toggle('done-no', v === 'no');
+    c.querySelectorAll('[data-ans]').forEach((b) => { b.classList.toggle('sel-yes', v === 'yes' && b.dataset.ans === 'yes'); b.classList.toggle('sel-no', v === 'no' && b.dataset.ans === 'no'); });
+  });
+  const n = MAIN_STEPS.filter((c) => ans[c.dataset.key]).length;
+  $('answeredPlain').textContent = `${n} of 6 steps answered.` + (n === 6 ? ' Tap Send results below.' : '');
+}
+stepCards.forEach((c) => c.querySelectorAll('[data-ans]').forEach((b) => {
+  b.onclick = () => {
+    const ans = lsGet(LS.answers, {}); const k = c.dataset.key;
+    ans[k] = ans[k] === b.dataset.ans ? undefined : b.dataset.ans; if (!ans[k]) delete ans[k];
+    lsSet(LS.answers, ans); log('all', `answer ${k}: ${ans[k] || 'cleared'}`); renderAnswers();
+  };
+}));
+
+// detailed engineer checklist (optional, inside Results details)
 const CHECKS = [
   'Safari tab: audio keeps playing with screen locked (≥2 min)',
   'Safari tab: after unlock, page still playing and controls work',
@@ -529,25 +569,63 @@ function renderChecks() {
     row.append(b, span); box.appendChild(row);
   });
 }
-$('notes').value = lsGet(LS.notes, ''); $('notes').oninput = (e) => lsSet(LS.notes, e.target.value);
-$('btnReset').onclick = () => { if (confirm('Reset checklist?')) { lsSet(LS.checks, {}); renderChecks(); } };
-$('btnCopy').onclick = async () => {
-  const st = lsGet(LS.checks, {});
-  const txt = [
-    `Loop phone test results · ${new Date().toString()}`,
-    `Mode: ${modeLabel} · iOS ${iosVer || 'n/a'}`, `UA: ${navigator.userAgent}`,
-    `Session: ${session ? session.id + ' (' + session.source + ')' : '-'}`,
-    `Last hidden test: ${$('hiddenRes').textContent}`,
-    `Any duration: plan ${$('anyPlan').textContent} · hidden ${$('anyHidden').textContent} · result ${$('anyResult').textContent}`,
-    `Cache: ${$('cacheFiles').textContent} · persisted ${$('persisted').textContent} · ${$('estimate').textContent} · served from ${$('servedFrom').textContent}`,
-    '', 'Checklist (✅ pass ❌ fail ➖ n/a ☐ untested):', ...CHECKS.map((c, i) => `${STATES[st[i] || 0]} ${c}`),
-    '', 'Notes:', $('notes').value || '-',
-    '', 'Still-cached history (latest 20):', ...lsGet(LS.evict, []).slice(-20).map((h) => `${h.ts} ${h.sid} ${h.have}/${h.total} +${h.days || 0}d persisted=${h.persisted} ${h.standalone ? 'HS' : 'tab'}`),
-    '', 'Event log (latest 60, ISO/UTC):', ...lsGet(LS.log, []).slice(-60),
-  ].join('\n');
-  try { await navigator.clipboard.writeText(txt); $('copyMsg').textContent = 'Copied ✓'; }
-  catch { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); $('copyMsg').textContent = 'Copied (fallback) ✓'; }
+$('btnReset').onclick = () => { if (confirm('Reset all answers and the detailed checklist?')) { lsSet(LS.checks, {}); lsSet(LS.answers, {}); renderChecks(); renderAnswers(); } };
+
+// ---------- bottom bar: Step X of 6 · Next ----------
+let curStep = 1;
+function updateStepFromScroll() {
+  const mid = window.innerHeight * 0.4; let best = 1;
+  MAIN_STEPS.forEach((c) => { if (c.getBoundingClientRect().top <= mid) best = Number(c.dataset.step); });
+  if (best !== curStep) { curStep = best; } $('btnNext').textContent = `Step ${curStep} of 6 · Next →`;
+}
+window.addEventListener('scroll', updateStepFromScroll, { passive: true });
+$('btnNext').onclick = () => {
+  const atTop = MAIN_STEPS[0].getBoundingClientRect().top > window.innerHeight * 0.4;
+  const target = atTop ? MAIN_STEPS[0] : (MAIN_STEPS.find((c) => Number(c.dataset.step) === curStep + 1) || $('results'));
+  target.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
+
+// ---------- Send results: Web Share API, else copy + show (nothing is sent to any server) ----------
+const PLAIN = { yes: 'IT WORKED', no: "IT DIDN'T" };
+function resultsText() {
+  const ans = lsGet(LS.answers, {}), st = lsGet(LS.checks, {});
+  const q = (c) => c.querySelector('h2').textContent;
+  const lines = [
+    `Sleep audio phone test results · ${new Date().toString()}`,
+    `Device: ${modeLabel} · iOS ${iosVer || 'n/a'}`,
+    `Sound tested: ${session ? (session.manifest.title || session.title) + ' (' + session.id + ')' : '-'}`,
+    '', 'Answers:',
+    ...stepCards.map((c) => `${Number(c.dataset.step) <= 6 ? 'Step ' + c.dataset.step : 'Optional'}. ${q(c)} → ${PLAIN[ans[c.dataset.key]] || 'not answered'}`),
+    '', 'Notes:', $('notes').value || '-',
+    '', 'What the page measured:',
+    `- Lock-screen buttons: ${$('msPlain').textContent} · MediaSession ${$('msSup').textContent}`,
+    `- Picture: ${$('vPlain').textContent} · ${$('vstate').textContent} · drift ${$('drift').textContent} · auto-resume ${$('vres2').textContent}`,
+    `- Sleep timer: ${$('countdown').textContent}`,
+    `- Locked playback: ${$('lockPlain').textContent} · ${$('hiddenRes').textContent}`,
+    `- Custom timer: ${$('anyPlain').textContent} · plan ${$('anyPlan').textContent} · hidden ${$('anyHidden').textContent} · result ${$('anyResult').textContent} · keep-alive ${$('keepMode').value}${FAST ? ' · FAST' : ''}`,
+    `- Offline: ${$('dlPlain').textContent} · ${$('cacheFiles').textContent} · persisted ${$('persisted').textContent} · ${$('estimate').textContent} · served from ${$('servedFrom').textContent} · SW ${$('swState').textContent}`,
+    `- UA: ${navigator.userAgent}`,
+  ];
+  if (Object.keys(st).length) lines.push('', 'Detailed checklist (✅ pass ❌ fail ➖ n/a ☐ untested):', ...CHECKS.map((c, i) => `${STATES[st[i] || 0]} ${c}`));
+  lines.push('', 'Still-cached history (latest 10):', ...lsGet(LS.evict, []).slice(-10).map((h) => `${h.ts} ${h.sid} ${h.have}/${h.total} +${h.days || 0}d persisted=${h.persisted} ${h.standalone ? 'HS' : 'tab'}`));
+  lines.push('', 'Event log (latest 40, ISO/UTC):', ...lsGet(LS.log, []).slice(-40));
+  return lines.join('\n');
+}
+async function sendResults() {
+  const txt = resultsText();
+  if (navigator.share) {
+    try { await navigator.share({ title: 'Sleep audio phone test results', text: txt }); log('all', 'results shared via share sheet'); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; log('all', 'share failed: ' + e.name + ', falling back to copy'); }
+  }
+  $('shareText').value = txt; $('shareBox').classList.add('show');
+  let copied = false;
+  try { await navigator.clipboard.writeText(txt); copied = true; }
+  catch { try { $('shareText').select(); copied = document.execCommand('copy'); } catch {} }
+  $('copyMsg').textContent = copied ? 'Copied ✓ Paste it into a message to El Jefe. The full text is also below.' : 'Select the text below, copy it, and paste it into a message.';
+  $('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+$('btnSend').onclick = sendResults;
+window.__resultsText = resultsText; // headless verification
 
 // ---------- ticker ----------
 setInterval(() => {
@@ -561,14 +639,16 @@ setInterval(() => {
     const am = aud.currentTime % vd; let dr = vid.currentTime - am; if (dr > vd / 2) dr -= vd; if (dr < -vd / 2) dr += vd;
     $('amod').textContent = am.toFixed(2) + ' s'; $('drift').textContent = (dr >= 0 ? '+' : '') + dr.toFixed(2) + ' s';
   }
+  if (!vid.paused && isFinite(vd) && vd > 0) $('vPlain').textContent = `Picture playing · next loop point in ${fmtDur(vd - vid.currentTime)} · loops seen: ${vLoops}`;
+  else $('vPlain').textContent = vLoops ? `Picture paused · loops seen: ${vLoops}` : 'Picture not playing.';
   if (timerMode && isFinite(aud.duration)) $('countdown').textContent = fmtDur(aud.duration - aud.currentTime) + ' left';
-  else if (!timerMode) $('countdown').textContent = '--:--';
+  else if (!timerMode) $('countdown').textContent = 'Timer not running';
 }, 500);
 
 // ---------- boot ----------
 (async () => {
   log('all', `load · ${modeLabel} · online=${navigator.onLine}`);
-  renderChecks();
+  renderChecks(); renderAnswers(); updateStepFromScroll();
   await registerSW();
   await loadSessions();
   await evictionCheck();
